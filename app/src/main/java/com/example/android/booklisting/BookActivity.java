@@ -15,7 +15,9 @@ import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -29,14 +31,17 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.List;
 
+import static android.os.Build.VERSION_CODES.M;
+
 public class BookActivity extends AppCompatActivity {
 
     EditText editText;
     ImageButton imageButton;
     BookAdapter adapter;
-    ListView listView;
     TextView textNoDataFound;
     static final String SEARCH_RESULTS = "booksSearchResults";
+    private TextView empty;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,24 +52,25 @@ public class BookActivity extends AppCompatActivity {
         imageButton = (ImageButton) findViewById(R.id.imageButton);
         textNoDataFound = (TextView) findViewById(R.id.text_no_data_found);
 
-        /**
-         * Adapter for the list of books
-         *
-         */
         adapter = new BookAdapter(this, -1);
 
-        listView = (ListView) findViewById(R.id.listView);
-        listView.setAdapter(adapter);
+        ListView bookListView = (ListView) findViewById(R.id.listView);
+        bookListView.setAdapter(adapter);
 
-        imageButton.setOnClickListener( new View.OnClickListener() {
+        LinearLayout mEmptyStateView = (LinearLayout) findViewById(R.id.empty_view);
+        bookListView.setEmptyView(mEmptyStateView);
+
+        empty = (TextView) findViewById(R.id.empty);
+
+
+        imageButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (isInternetConnectionAvailable()){
+                if (isInternetConnectionAvailable()) {
                     BookAsyncTask task = new BookAsyncTask();
                     task.execute();
                 } else {
-                    Toast.makeText(BookActivity.this, R.string.error_no_internet,
-                            Toast.LENGTH_SHORT).show();
+                    empty.setText(R.string.error_no_internet);
                 }
             }
         });
@@ -75,14 +81,16 @@ public class BookActivity extends AppCompatActivity {
         }
     }
 
-    private boolean isInternetConnectionAvailable(){
-        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-        return activeNetwork.isConnectedOrConnecting();
+
+    public boolean isInternetConnectionAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
-    private void updateUi(List<Book> books){
-        if (books.isEmpty()){
+    private void updateUi(List<Book> books) {
+        if (books.isEmpty()) {
             // if no books found, show a message
             textNoDataFound.setVisibility(View.VISIBLE);
         } else {
@@ -102,7 +110,7 @@ public class BookActivity extends AppCompatActivity {
 
     private String getUrlForHttpRequest() {
         final String baseUrl = "https://www.googleapis.com/books/v1/volumes?q=search+";
-        String formatUserInput = getUserInput().trim().replaceAll("\\s+","+");
+        String formatUserInput = getUserInput().trim().replaceAll("\\s+", "+");
         String url = baseUrl + formatUserInput;
         return url;
     }
@@ -144,7 +152,7 @@ public class BookActivity extends AppCompatActivity {
         private String makeHttpRequest(URL url) throws IOException {
             String jsonResponse = "";
 
-            if (url == null){
+            if (url == null) {
                 return jsonResponse;
             }
 
@@ -157,7 +165,7 @@ public class BookActivity extends AppCompatActivity {
                 urlConnection.setReadTimeout(10000 /* milliseconds */);
                 urlConnection.setConnectTimeout(15000 /* milliseconds */);
                 urlConnection.connect();
-                if (urlConnection.getResponseCode() == 200){
+                if (urlConnection.getResponseCode() == 200) {
                     inputStream = urlConnection.getInputStream();
                     jsonResponse = readFromStream(inputStream);
                 } else {
@@ -196,7 +204,7 @@ public class BookActivity extends AppCompatActivity {
                 return null;
             }
 
-            List<Book> books =  QueryUtils.extractBooks(json);
+            List<Book> books = QueryUtils.extractBooks(json);
             return books;
         }
     }

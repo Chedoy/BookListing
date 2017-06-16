@@ -20,7 +20,7 @@ public class BookAdapter extends ArrayAdapter<Book> {
 
         Book book = getItem(position);
 
-        if (view == null){
+        if (view == null) {
             view = LayoutInflater.from(getContext()).inflate(
                     R.layout.list_item, parent, false);
         }
@@ -29,7 +29,6 @@ public class BookAdapter extends ArrayAdapter<Book> {
         TextView author = (TextView) view.findViewById(R.id.author);
         title.setText(book.getTitle());
         author.setText(book.getAuthor());
-
 
 
         return view;

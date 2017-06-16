@@ -1,6 +1,8 @@
 package com.example.android.booklisting;
 
 
+import android.util.Log;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -33,33 +35,37 @@ public class QueryUtils {
     }
 
 
-    public static List<Book> extractBooks(String json) {
+    public static List<Book> extractBooks(String responseJson) {
 
         List<Book> books = new ArrayList<>();
 
         try {
-            JSONObject jsonResponse = new JSONObject(json);
+            JSONObject volumes = new JSONObject(responseJson);
+            JSONArray items = volumes.getJSONArray("items");
 
-            if (jsonResponse.getInt("totalItems") == 0) {
+            if (volumes.getInt("totalItems") == 0) {
                 return books;
             }
-            JSONArray jsonArray = jsonResponse.getJSONArray("items");
+            JSONArray jsonArray = volumes.getJSONArray("items");
 
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject bookObject = jsonArray.getJSONObject(i);
-
-                JSONObject bookInfo = bookObject.getJSONObject("volumeInfo");
-
-                String title = bookInfo.getString("title");
-                JSONArray authorsArray = bookInfo.getJSONArray("authors");
-                String authors = formatListOfAuthors(authorsArray);
+            for (int i = 0; i < items.length(); i++) {
+                JSONObject item = items.getJSONObject(i);
+                JSONObject volume = item.getJSONObject("volumeInfo");
+                String title = volume.getString("title");
+                String authors;
+                if (volume.has("authors")) {
+                    authors = volume.getJSONArray("authors").get(0).toString();
+                } else {
+                    authors = "Unknown author";
+                }
+                ;
 
 
                 Book book = new Book(authors, title);
                 books.add(book);
             }
         } catch (JSONException e) {
-            e.printStackTrace();
+            Log.e("QueryUtils", "Problem parsing the book JSON results", e);
         }
         return books;
     }
